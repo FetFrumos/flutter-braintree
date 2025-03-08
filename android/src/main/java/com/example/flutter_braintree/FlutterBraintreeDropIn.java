@@ -1,18 +1,7 @@
 package com.example.flutter_braintree;
 
-import io.flutter.embedding.engine.plugins.FlutterPlugin;
-import io.flutter.embedding.engine.plugins.activity.ActivityAware;
-import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
-import io.flutter.plugin.common.MethodCall;
-import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
-import io.flutter.plugin.common.MethodChannel.Result;
-import io.flutter.plugin.common.PluginRegistry.ActivityResultListener;
-import io.flutter.plugin.common.PluginRegistry.Registrar;
-
 import android.app.Activity;
 import android.content.Intent;
-
 
 import androidx.annotation.Nullable;
 
@@ -30,30 +19,31 @@ import com.google.android.gms.wallet.WalletConstants;
 import java.io.Serializable;
 import java.util.HashMap;
 
-public class FlutterBraintreeDropIn  implements FlutterPlugin, ActivityAware, MethodCallHandler, ActivityResultListener, Serializable {
+import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.embedding.engine.plugins.activity.ActivityAware;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
+import io.flutter.plugin.common.MethodCall;
+import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugin.common.MethodChannel.Result;
+import io.flutter.plugin.common.PluginRegistry.ActivityResultListener;
+
+public class FlutterBraintreeDropIn implements FlutterPlugin, ActivityAware, MethodChannel.MethodCallHandler, ActivityResultListener, Serializable {
   private static final int DROP_IN_REQUEST_CODE = 0x1337;
 
   private Activity activity;
   private Result activeResult;
 
-
-  public static void registerWith(Registrar registrar) {
-    final MethodChannel channel = new MethodChannel(registrar.messenger(), "flutter_braintree.drop_in");
-    FlutterBraintreeDropIn plugin = new FlutterBraintreeDropIn();
-    plugin.activity = registrar.activity();
-    registrar.addActivityResultListener(plugin);
-    channel.setMethodCallHandler(plugin);
-  }
+  // Видалено статичний метод registerWith(), оскільки він більше не потрібен
 
   @Override
-  public void onAttachedToEngine(FlutterPluginBinding binding) {
+  public void onAttachedToEngine(FlutterPlugin.FlutterPluginBinding binding) {
     final MethodChannel channel = new MethodChannel(binding.getBinaryMessenger(), "flutter_braintree.drop_in");
     channel.setMethodCallHandler(this);
   }
 
   @Override
-  public void onDetachedFromEngine(FlutterPluginBinding binding) {
-
+  public void onDetachedFromEngine(FlutterPlugin.FlutterPluginBinding binding) {
+    // Нічого не потрібно робити при відв'язці від двигуна
   }
 
   @Override
@@ -63,14 +53,14 @@ public class FlutterBraintreeDropIn  implements FlutterPlugin, ActivityAware, Me
   }
 
   @Override
-  public void onDetachedFromActivityForConfigChanges() {
-    activity = null;
-  }
-
-  @Override
   public void onReattachedToActivityForConfigChanges(ActivityPluginBinding binding) {
     activity = binding.getActivity();
     binding.addActivityResultListener(this);
+  }
+
+  @Override
+  public void onDetachedFromActivityForConfigChanges() {
+    activity = null;
   }
 
   @Override
@@ -90,12 +80,12 @@ public class FlutterBraintreeDropIn  implements FlutterPlugin, ActivityAware, Me
       else if (tokenizationKey != null)
         token = tokenizationKey;
 
-      // For best results with 3ds 2.0, provide as many additional elements as possible.
+      // Обробка адреси для 3DS
       HashMap<String, String> billingAddress = call.argument("billingAddress");
-      if(billingAddress != null){
+      if (billingAddress != null) {
         ThreeDSecurePostalAddress address = new ThreeDSecurePostalAddress();
-        address.setGivenName(billingAddress.get("givenName")); // ASCII-printable characters required, else will throw a validation error
-        address.setSurname(billingAddress.get("surname")); // ASCII-printable characters required, else will throw a validation error
+        address.setGivenName(billingAddress.get("givenName"));
+        address.setSurname(billingAddress.get("surname"));
         address.setPhoneNumber(billingAddress.get("phoneNumber"));
         address.setStreetAddress(billingAddress.get("streetAddress"));
         address.setExtendedAddress(billingAddress.get("extendedAddress"));
@@ -110,26 +100,17 @@ public class FlutterBraintreeDropIn  implements FlutterPlugin, ActivityAware, Me
         threeDSecureRequest.setAdditionalInformation(additionalInformation);
       }
 
-
-
       threeDSecureRequest.setAmount((String) call.argument("amount"));
       String email = call.argument("email");
-      if(email != null){
+      if (email != null) {
         threeDSecureRequest.setEmail(email);
       }
-
       threeDSecureRequest.setVersionRequested(ThreeDSecureRequest.VERSION_2);
 
-
       DropInRequest dropInRequest = new DropInRequest();
-
       dropInRequest.setVaultManagerEnabled((Boolean) call.argument("vaultManagerEnabled"));
       dropInRequest.setThreeDSecureRequest(threeDSecureRequest);
       dropInRequest.setMaskCardNumber((Boolean) call.argument("maskCardNumber"));
-
-
-      //.collectDeviceData((Boolean) call.argument("collectDeviceData"))
-      // .requestThreeDSecureVerification((Boolean) call.argument("requestThreeDSecureVerification"))
 
       readGooglePaymentParameters(dropInRequest, call);
       readPayPalParameters(dropInRequest, call);
@@ -148,7 +129,7 @@ public class FlutterBraintreeDropIn  implements FlutterPlugin, ActivityAware, Me
       Intent intent = new Intent(activity, DropInActivity.class);
       intent.putExtra("token", token);
       intent.putExtra("dropInRequest", dropInRequest);
-      this.activity.startActivityForResult(intent, DROP_IN_REQUEST_CODE);
+      activity.startActivityForResult(intent, DROP_IN_REQUEST_CODE);
     } else {
       result.notImplemented();
     }
@@ -195,9 +176,9 @@ public class FlutterBraintreeDropIn  implements FlutterPlugin, ActivityAware, Me
         if (resultCode == Activity.RESULT_OK) {
           DropInResult dropInResult = data.getParcelableExtra("dropInResult");
           PaymentMethodNonce paymentMethodNonce = dropInResult.getPaymentMethodNonce();
-          HashMap<String, Object> result = new HashMap<String, Object>();
+          HashMap<String, Object> result = new HashMap<>();
 
-          HashMap<String, Object> nonceResult = new HashMap<String, Object>();
+          HashMap<String, Object> nonceResult = new HashMap<>();
           nonceResult.put("nonce", paymentMethodNonce.getString());
           nonceResult.put("typeLabel", dropInResult.getPaymentMethodType().name());
           nonceResult.put("description", dropInResult.getPaymentDescription());
