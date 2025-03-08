@@ -3,27 +3,26 @@ package com.example.flutter_braintree;
 import android.app.Activity;
 import android.content.Intent;
 
+import androidx.annotation.NonNull;
+
 import java.util.Map;
 
-import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
-import io.flutter.embedding.engine.plugins.activity.ActivityResultListener;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 
-public class FlutterBraintreePlugin implements FlutterPlugin, ActivityAware, MethodCallHandler, ActivityResultListener {
+public class FlutterBraintreePlugin implements FlutterPlugin, ActivityAware, MethodCallHandler, ActivityPluginBinding.ActivityResultListener {
   private static final int CUSTOM_ACTIVITY_REQUEST_CODE = 0x420;
 
   private Activity activity;
   private Result activeResult;
-
   private FlutterBraintreeDropIn dropIn;
 
-  // Видалено застарілий метод registerWith()
+  // Видалено застарілий метод registerWith(Registrar registrar)
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPlugin.FlutterPluginBinding binding) {
@@ -114,7 +113,7 @@ public class FlutterBraintreePlugin implements FlutterPlugin, ActivityAware, Met
       case CUSTOM_ACTIVITY_REQUEST_CODE:
         if (resultCode == Activity.RESULT_OK) {
           String type = data.getStringExtra("type");
-          if (type.equals("paymentMethodNonce")) {
+          if ("paymentMethodNonce".equals(type)) {
             activeResult.success(data.getSerializableExtra("paymentMethodNonce"));
           } else {
             Exception error = new Exception("Invalid activity result type.");
