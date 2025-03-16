@@ -2,10 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.flutter_braintree">
 
-    <application android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+    <application>
         <activity
-            android:name=".DropInActivity"
-            android:theme="@style/Theme.AppCompat.Light.Dialog">
+            android:name=".DropInActivity">
         </activity>
     </application>
 
