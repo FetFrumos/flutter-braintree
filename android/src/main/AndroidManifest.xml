@@ -3,8 +3,8 @@
     package="com.example.flutter_braintree">
 
     <application>
-        <activity
-            android:name=".DropInActivity">
+        <activity android:name=".DropInActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
         </activity>
     </application>
 
