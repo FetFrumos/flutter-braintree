@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.flutter_braintree">
 
-    <application android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+    <application  android:theme="@android:style/Theme.Light.NoTitleBar">
         <activity android:name=".DropInActivity"
             android:theme="@style/bt_transparent_activity">
         </activity>
